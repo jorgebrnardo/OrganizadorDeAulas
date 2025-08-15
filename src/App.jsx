@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously } from 'firebase/auth';
+import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, query, where, deleteDoc, getDocs } from 'firebase/firestore';
 
 // Função para converter um objeto de cor para a string CSS
 const getGradientString = (color) => `bg-gradient-to-br ${color}`;
@@ -13,7 +16,27 @@ const backgroundColors = [
 ];
 
 const App = () => {
+  // Configuração do Firebase usando variáveis de ambiente do Vite
+
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  };
+  
+  // As variáveis de ambiente do Vite não funcionam diretamente neste ambiente.
+  // Para este ambiente, o projectId é usado como appId
+  const appId = "teacher-app-firebase";
+  const initialAuthToken = undefined;
+
   // Estados da aplicação
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [classes, setClasses] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -33,27 +56,63 @@ const App = () => {
 
   const HOURLY_RATE = 55; // R$55 por hora de aula
 
-  // Carrega as aulas do localStorage ao iniciar a aplicação
+  // Inicializa o Firebase e a autenticação
   useEffect(() => {
-    try {
-      const storedClasses = localStorage.getItem('teacher-app-classes');
-      if (storedClasses) {
-        const parsedClasses = JSON.parse(storedClasses);
-        setClasses(parsedClasses);
-      }
-    } catch (e) {
-      console.error("Erro ao carregar as aulas do localStorage:", e);
-    }
-  }, []);
+    const initFirebase = async () => {
+      try {
+        // Verifica se as chaves de API estão presentes no ambiente local
+        if (import.meta.env.VITE_FIREBASE_API_KEY) {
+          const app = initializeApp(firebaseConfig);
+          const firestore = getFirestore(app);
+          const authInstance = getAuth(app);
+          setDb(firestore);
+          setAuth(authInstance);
 
-  // Salva as aulas no localStorage sempre que a lista de aulas for atualizada
+          await signInAnonymously(authInstance);
+        } else {
+            console.error("Erro: A configuração do Firebase está incompleta. Verifique o seu arquivo .env.");
+        }
+      } catch (e) {
+        console.error("Erro ao inicializar o Firebase:", e);
+      }
+    };
+    initFirebase();
+  }, [firebaseConfig.apiKey]);
+
+  // Listener para o estado de autenticação
   useEffect(() => {
-    try {
-      localStorage.setItem('teacher-app-classes', JSON.stringify(classes));
-    } catch (e) {
-      console.error("Erro ao salvar as aulas no localStorage:", e);
+    if (auth) {
+      const unsubscribe = auth.onAuthStateChanged(user => {
+        if (user) {
+          setUserId(user.uid);
+        } else {
+          setUserId(null);
+        }
+        setIsAuthReady(true);
+      });
+      return () => unsubscribe();
     }
-  }, [classes]);
+  }, [auth]);
+
+  // Listener para as aulas no Firestore
+  useEffect(() => {
+    if (!db || !isAuthReady || !userId) return;
+
+    // Acessa a coleção de dados do usuário
+    const classesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/classes`);
+    
+    const unsubscribe = onSnapshot(classesCollectionRef, (snapshot) => {
+      const classList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setClasses(classList);
+    }, (error) => {
+      console.error("Erro ao carregar as aulas:", error);
+    });
+
+    return () => unsubscribe();
+  }, [db, isAuthReady, appId, userId]);
 
   // Helpers para o calendário
   const getDaysInMonth = (date) => {
@@ -87,7 +146,6 @@ const App = () => {
     });
 
     currentMonthClasses.forEach(c => {
-      // Cria objetos Date no fuso horário local para o cálculo
       const start = new Date(c.date + 'T' + c.startTime);
       const end = new Date(c.date + 'T' + c.endTime);
 
@@ -158,40 +216,34 @@ const App = () => {
   };
 
   // Salva ou atualiza a aula
-  const handleSaveClass = (e) => {
+  const handleSaveClass = async (e) => {
     e.preventDefault();
+    if (!db || !userId) return;
     
+    const classesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/classes`);
+
     if (editingClass) {
       // É uma edição
-      const updatedClasses = classes.map(cls =>
-        cls.id === editingClass.id
-          ? {
-              ...cls,
-              title: form.title,
-              date: form.date,
-              startTime: form.startTime,
-              endTime: form.endTime,
-            }
-          : cls
-      );
-      setClasses(updatedClasses);
+      const classDocRef = doc(classesCollectionRef, editingClass.id);
+      await setDoc(classDocRef, {
+        title: form.title,
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+      }, { merge: true });
     } else {
       // É uma nova aula
       const recurrenceId = form.isRecurring ? crypto.randomUUID() : null;
-      let classesToAdd = [];
       const classDate = new Date(form.date);
 
       if (form.isRecurring && form.recurringDays.length > 0) {
-        // Lógica para aulas recorrentes
         const today = new Date(classDate);
         today.setHours(0, 0, 0, 0);
 
-        // Adiciona a primeira aula se o dia corresponder
         if (form.recurringDays.includes(today.getDay())) {
-           classesToAdd.push({
-            id: crypto.randomUUID(),
+           await addDoc(classesCollectionRef, {
             title: form.title,
-            date: form.date, // Data como string
+            date: form.date,
             startTime: form.startTime,
             endTime: form.endTime,
             isRecurring: true,
@@ -199,17 +251,15 @@ const App = () => {
           });
         }
         
-        // Adiciona aulas para as próximas 12 semanas (ou 84 dias)
         for (let i = 1; i <= 84; i++) {
           const nextDate = new Date(classDate);
           nextDate.setDate(nextDate.getDate() + i);
           nextDate.setHours(0, 0, 0, 0);
 
           if (form.recurringDays.includes(nextDate.getDay())) {
-            classesToAdd.push({
-              id: crypto.randomUUID(),
+            await addDoc(classesCollectionRef, {
               title: form.title,
-              date: nextDate.toISOString().split('T')[0], // Data como string
+              date: nextDate.toISOString().split('T')[0],
               startTime: form.startTime,
               endTime: form.endTime,
               isRecurring: true,
@@ -218,18 +268,15 @@ const App = () => {
           }
         }
       } else {
-        // Lógica para uma única aula
-        classesToAdd.push({
-          id: crypto.randomUUID(),
+        await addDoc(classesCollectionRef, {
           title: form.title,
-          date: form.date, // Data como string
+          date: form.date,
           startTime: form.startTime,
           endTime: form.endTime,
           isRecurring: false,
           recurrenceId: null,
         });
       }
-      setClasses(prevClasses => [...prevClasses, ...classesToAdd]);
     }
     
     // Reseta o formulário e fecha o modal
@@ -238,14 +285,22 @@ const App = () => {
     setShowModal(false);
   };
 
-  const deleteClass = (id, deleteAll = false) => {
+  const deleteClass = async (id, deleteAll = false) => {
+    if (!db || !userId) return;
+    
     const classToDelete = classes.find(c => c.id === id);
     if (!classToDelete) return;
 
     if (deleteAll && classToDelete.recurrenceId) {
-      setClasses(prevClasses => prevClasses.filter(c => c.recurrenceId !== classToDelete.recurrenceId));
+      const classesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/classes`);
+      const q = query(classesCollectionRef, where('recurrenceId', '==', classToDelete.recurrenceId));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach(async (doc) => {
+        await deleteDoc(doc.ref);
+      });
     } else {
-      setClasses(prevClasses => prevClasses.filter(c => c.id !== id));
+      const classesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/classes`);
+      await deleteDoc(doc(classesCollectionRef, id));
     }
     
     setEditingClass(null);
@@ -307,6 +362,11 @@ const App = () => {
               </p>
             </div>
           </div>
+          {userId && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
+             (ID do Usuário: <code className="bg-gray-200 dark:bg-gray-600 rounded-md px-1">{userId}</code>)
+            </p>
+          )}
         </div>
         
         {/* Navegação do Calendário */}
