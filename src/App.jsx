@@ -17,7 +17,6 @@ const backgroundColors = [
 
 const App = () => {
   // Configuração do Firebase usando variáveis de ambiente do Vite
-
   const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -27,7 +26,6 @@ const App = () => {
     appId: import.meta.env.VITE_FIREBASE_APP_ID
   };
   
-  // As variáveis de ambiente do Vite não funcionam diretamente neste ambiente.
   // Para este ambiente, o projectId é usado como appId
   const appId = "teacher-app-firebase";
   const initialAuthToken = undefined;
