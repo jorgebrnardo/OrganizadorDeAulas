@@ -50,10 +50,15 @@ Vá para o console do Firebase, selecione seu projeto, e vá para Project Settin
 Crie um arquivo chamado .env na raiz do seu projeto e adicione as suas chaves no seguinte formato:
 
 VITE_FIREBASE_API_KEY="SuaChaveAqui"
+
 VITE_FIREBASE_AUTH_DOMAIN="SeuDominioAqui"
+
 VITE_FIREBASE_PROJECT_ID="SeuProjectIdAqui"
+
 VITE_FIREBASE_STORAGE_BUCKET="SeuBucketAqui"
+
 VITE_FIREBASE_MESSAGING_SENDER_ID="SeuSenderIdAqui"
+
 VITE_FIREBASE_APP_ID="SeuAppIdAqui"
 
 Importante: Adicione /.env ao seu arquivo .gitignore para garantir que as suas chaves não sejam publicadas no GitHub.
