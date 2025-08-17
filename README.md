@@ -1,60 +1,59 @@
-Organizador de Aulas
+**Gerenciador Aulas de Inglês**
+
 
 Uma aplicação web intuitiva e completa, construída com React, Tailwind CSS e Firebase, projetada para ajudar professores de inglês a organizar e gerenciar suas aulas, rastrear ganhos e agendar compromissos com facilidade.
 
-Funcionalidades:
+**Funcionalidades**
 
-Calendário Interativo: Uma visualização mensal clara para marcar e acompanhar todas as aulas.
+Calendário Interativo: Visualização mensal clara para marcar e acompanhar todas as aulas.
 
-Cálculo de Ganhos: Calcula automaticamente o valor mensal total com base nas horas de aula agendadas, usando uma taxa fixa de R$55 por hora.
+Cálculo de Ganhos: Cálculo automático do valor mensal com base nas horas de aula agendadas (R$55/hora).
 
-Aulas Recorrentes: Agende aulas que se repetem semanalmente em dias específicos da semana, economizando tempo no agendamento.
+Aulas Recorrentes: Agendamento de aulas semanais recorrentes em dias específicos.
 
-Gerenciamento de Aulas: Adicione, edite ou exclua aulas com apenas alguns cliques no calendário.
+Gerenciamento de Aulas: Adicione, edite ou exclua aulas facilmente.
 
-Opções de Exclusão: Para aulas recorrentes, escolha se deseja apagar apenas uma ocorrência ou a série inteira.
+Opções de Exclusão: Para aulas recorrentes, escolha entre apagar uma única ocorrência ou a série inteira.
 
-Sincronização em Nuvem: Todos os dados são salvos em tempo real no Firebase Firestore, permitindo que você e sua namorada acessem as informações de qualquer dispositivo.
+Sincronização em Nuvem: Dados salvos em tempo real no Firebase Firestore.
 
-Acesso Compartilhado: Compartilhe o ID de usuário do perfil com sua namorada para que ela possa visualizar e gerenciar as aulas de qualquer lugar, mesmo sem um sistema de login tradicional.
+**Tecnologias Utilizadas**
 
-Tecnologias Utilizadas
+React – Biblioteca para construção da interface.
 
-React: Biblioteca JavaScript para construir a interface de usuário.
+Vite – Ferramenta de build rápida e moderna.
 
-Vite: Ferramenta de build moderna e rápida.
+Tailwind CSS – Framework CSS utilitário para design responsivo.
 
-Tailwind CSS: Framework de CSS utilitário para design responsivo e elegante.
+Firebase (Firestore & Auth) – Banco de dados em tempo real e autenticação.
 
-Firebase: Plataforma do Google para o banco de dados em tempo real (Firestore) e autenticação.
-
-Como Configurar e Executar o Projeto Localmente
+**Configuração do Projeto**
 
 Pré-requisitos
 
 Node.js e npm instalados.
 
-Uma conta no Firebase com um projeto configurado.
+Conta no Firebase com projeto configurado.
 
-Configuração do Projeto
+Passo a Passo
 
-Clone o Repositório:
+Clone o Repositório
 
 git clone https://github.com/seu-usuario/seu-repositorio.git
 
 cd seu-repositorio
 
-Instale as Dependências:
+
+Instale as Dependências
 
 npm install
 
-Isso instalará todas as dependências, incluindo React e Tailwind CSS.
 
-Configuração do Firebase:
+**Configuração do Firebase**
 
-Vá para o console do Firebase, selecione seu projeto, e vá para Project Settings > General para encontrar o objeto de configuração do seu projeto.
+No console do Firebase, vá em Configurações do Projeto > Geral e copie o objeto de configuração.
 
-Crie um arquivo chamado .env na raiz do seu projeto e adicione as suas chaves no seguinte formato:
+Crie um arquivo .env na raiz do projeto e adicione as chaves:
 
 VITE_FIREBASE_API_KEY="SuaChaveAqui"
 
@@ -68,13 +67,14 @@ VITE_FIREBASE_MESSAGING_SENDER_ID="SeuSenderIdAqui"
 
 VITE_FIREBASE_APP_ID="SeuAppIdAqui"
 
-Importante: Adicione /.env ao seu arquivo .gitignore para garantir que as suas chaves não sejam publicadas no GitHub.
 
-Configuração do Banco de Dados (Firestore):
+Adicione /.env ao .gitignore para evitar expor suas credenciais no GitHub.
 
-No console do Firebase, vá para Firestore Database > Rules.
+**Configuração do Firestore**
 
-Publique as seguintes regras para permitir que usuários anônimos e autenticados leiam e escrevam dados:
+No console do Firebase, vá em Firestore Database > Rules.
+
+Publique as seguintes regras:
 
 rules_version = '2';
 service cloud.firestore {
@@ -85,32 +85,50 @@ service cloud.firestore {
   }
 }
 
-Lembre-se de ir na seção Authentication e habilitar o provedor de Anonymous (Anônimo).
 
-Execute a Aplicação:
+Ative também a autenticação Anonymous em Authentication > Sign-in method.
+
+Execute a Aplicação
 
 npm run dev
 
-O aplicativo estará disponível em http://localhost:5173.
 
-Como Fazer o Deploy para a Web
+O app estará disponível em http://localhost:5173.
 
-Instale o Firebase CLI:
+**Deploy na Web**
+
+Instale o Firebase CLI
 
 npm install -g firebase-tools
 
-Autentique-se e Inicialize o Projeto:
+
+Autentique-se e Inicialize o Projeto
 
 firebase login
-
 firebase init
 
-Siga as instruções, selecionando Hosting, seu projeto e use dist como diretório público.
 
-Gere os Arquivos de Produção e Faça o Deploy:
+Selecione Hosting.
+
+Escolha o projeto configurado no Firebase.
+
+Use dist como diretório público.
+
+Build e Deploy
 
 npm run build
-
 firebase deploy
 
-O link para a sua aplicação será exibido no final do processo de deploy.
+
+Ao final, o link da aplicação será exibido no terminal.
+
+
+Próximos Passos (Ideias Futuras):
+
+Relatórios financeiros avançados.
+
+Versão mobile otimizada.
+
+Notificações de lembrete de aula.
+
+Criado por Jorge Bernardo
